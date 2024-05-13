@@ -504,7 +504,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
           case "MOUSE_LOCATION": {
             const { pointer, button, username, selectedElementIds } =
               decryptedData.payload;
-              console.log('decryptedData.payload:',decryptedData.payload)
+              //console.log('decryptedData.payload:',decryptedData.payload)
             const socketId: SocketUpdateDataSource["MOUSE_LOCATION"]["payload"]["socketId"] =
               decryptedData.payload.socketId ||
               // @ts-ignore legacy, see #2094 (#2097)
@@ -512,7 +512,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
 
             const collaborators = new Map(this.collaborators);
             const user = collaborators.get(socketId) || {}!;
-            console.log('user:',socketId,pointer,user)
+            //console.log('user:',socketId,pointer,user)
             user.pointer = pointer;
             user.button = button;
             user.selectedElementIds = selectedElementIds;

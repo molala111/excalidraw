@@ -5913,7 +5913,7 @@ class App extends React.Component<AppProps, AppState> {
     if (isNaN(pointer.x) || isNaN(pointer.y)) {
       // sometimes the pointer goes off screen
     }
-    console.log('this.point:', { ...pointer, renderPointer: importRenderPointerFromLocalStorage() })
+    //console.log('this.point:', { ...pointer, renderPointer: importRenderPointerFromLocalStorage() })
     this.props.onPointerUpdate?.({
       pointer: { ...pointer, renderPointer: importRenderPointerFromLocalStorage() },
       button,
