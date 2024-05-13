@@ -17,19 +17,16 @@ export const actionToggleLock = register({
 
     const operation = getOperation(selectedElements);
     const selectedElementsMap = arrayToMap(selectedElements);
-    const lock = operation === "lock";
+
     return {
       elements: elements.map((element) => {
         if (!selectedElementsMap.has(element.id)) {
           return element;
         }
 
-        return newElementWith(element, { locked: lock });
+        return newElementWith(element, { locked: operation === "lock" });
       }),
-      appState: {
-        ...appState,
-        selectedLinearElement: lock ? null : appState.selectedLinearElement,
-      },
+      appState,
       commitToHistory: true,
     };
   },

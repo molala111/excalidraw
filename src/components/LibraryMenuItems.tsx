@@ -1,3 +1,4 @@
+import { chunk } from "lodash";
 import React, { useCallback, useState } from "react";
 import { saveLibraryAsJSON, serializeLibraryAsJSON } from "../data/json";
 import Library from "../data/library";
@@ -10,7 +11,7 @@ import {
   LibraryItem,
   LibraryItems,
 } from "../types";
-import { arrayToMap, chunk, muteFSAbortError } from "../utils";
+import { arrayToMap, muteFSAbortError } from "../utils";
 import { useDevice } from "./App";
 import ConfirmDialog from "./ConfirmDialog";
 import { close, exportToFileIcon, load, publishIcon, trash } from "./icons";

@@ -35,10 +35,7 @@ export const exportToCanvas = ({
   files,
   maxWidthOrHeight,
   getDimensions,
-  exportPadding,
-}: ExportOpts & {
-  exportPadding?: number;
-}) => {
+}: ExportOpts) => {
   const { elements: restoredElements, appState: restoredAppState } = restore(
     { elements, appState },
     null,
@@ -49,7 +46,7 @@ export const exportToCanvas = ({
     getNonDeletedElements(restoredElements),
     { ...restoredAppState, offsetTop: 0, offsetLeft: 0, width: 0, height: 0 },
     files || {},
-    { exportBackground, exportPadding, viewBackgroundColor },
+    { exportBackground, viewBackgroundColor },
     (width: number, height: number) => {
       const canvas = document.createElement("canvas");
 
@@ -90,7 +87,6 @@ export const exportToBlob = async (
   opts: ExportOpts & {
     mimeType?: string;
     quality?: number;
-    exportPadding?: number;
   },
 ): Promise<Blob> => {
   let { mimeType = MIME_TYPES.png, quality } = opts;
@@ -196,6 +192,36 @@ export const exportToClipboard = async (
     throw new Error("Invalid export type");
   }
 };
+
+export function splitArrayByByteSize(
+  arr: readonly ExcalidrawElement[],
+  maxSizeInBytes: number,
+) {
+  const encoder = new TextEncoder();
+  let currentSize = 0;
+  let subset = [];
+  const subsets = [];
+
+  for (let i = 0; i < arr.length; i++) {
+    const objString = JSON.stringify(arr[i]);
+    const byteSize = encoder.encode(objString).length;
+
+    if (currentSize + byteSize > maxSizeInBytes) {
+      subsets.push(subset);
+      subset = [];
+      currentSize = 0;
+    }
+
+    subset.push(arr[i]);
+    currentSize += byteSize;
+  }
+
+  if (subset.length > 0) {
+    subsets.push(subset);
+  }
+
+  return subsets;
+}
 
 export { serializeAsJSON, serializeLibraryAsJSON } from "../data/json";
 export {

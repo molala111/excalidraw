@@ -80,6 +80,7 @@ export const LibraryMenu = ({
   onInsertLibraryItems,
   pendingElements,
   onAddToLibrary,
+  theme,
   setAppState,
   files,
   libraryReturnUrl,
@@ -92,6 +93,7 @@ export const LibraryMenu = ({
   onClose: () => void;
   onInsertLibraryItems: (libraryItems: LibraryItems) => void;
   onAddToLibrary: () => void;
+  theme: AppState["theme"];
   files: BinaryFiles;
   setAppState: React.Component<any, AppState>["setState"];
   libraryReturnUrl: ExcalidrawProps["libraryReturnUrl"];
@@ -103,12 +105,12 @@ export const LibraryMenu = ({
   const ref = useRef<HTMLDivElement | null>(null);
 
   const device = useDevice();
+
   useOnClickOutside(
     ref,
     useCallback(
       (event) => {
-        // If click on the library icon, do nothing so that LibraryButton
-        // can toggle library menu
+        // If click on the library icon, do nothing.
         if ((event.target as Element).closest(".ToolIcon__library")) {
           return;
         }
@@ -288,7 +290,7 @@ export const LibraryMenu = ({
         appState={appState}
         libraryReturnUrl={libraryReturnUrl}
         library={library}
-        theme={appState.theme}
+        theme={theme}
         files={files}
         id={id}
         selectedItems={selectedItems}

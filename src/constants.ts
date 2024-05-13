@@ -80,7 +80,7 @@ export const THEME = {
 export const WINDOWS_EMOJI_FALLBACK_FONT = "Segoe UI Emoji";
 
 export const DEFAULT_FONT_SIZE = 20;
-export const DEFAULT_FONT_FAMILY: FontFamilyValues = FONT_FAMILY.Virgil;
+export const DEFAULT_FONT_FAMILY: FontFamilyValues = FONT_FAMILY.Helvetica;
 export const DEFAULT_TEXT_ALIGN = "left";
 export const DEFAULT_VERTICAL_ALIGN = "top";
 export const DEFAULT_VERSION = "{version}";
@@ -144,13 +144,46 @@ export const URL_HASH_KEYS = {
 
 export const DEFAULT_UI_OPTIONS: AppProps["UIOptions"] = {
   canvasActions: {
+    allowedShapes: [],
+    allowedShortcuts: [],
     changeViewBackgroundColor: true,
     clearCanvas: true,
+    disableAlignItems: false,
+    disableGrouping: false,
+    disableHints: false,
+    disableLink: false,
+    disableFileDrop: false,
+    disableShortcuts: false,
+    disableVerticalAlignOptions: false,
     export: { saveFileToDisk: true },
+    fontSizeOptions: ["s", "m", "l", "xl"],
+    hideArrowHeadsOptions: false,
+    hideClearCanvas: false,
+    hideColorInput: false,
+    hideFontFamily: false,
+    hideHelpDialog: false,
+    hideIOActions: false,
+    hideLayers: false,
+    hideLibraries: false,
+    hideLockButton: false,
+    hideOpacityInput: false,
+    hideSharpness: false,
+    hideStrokeStyle: false,
+    hideTextAlign: false,
+    hideThemeControls: false,
+    hideUserList: false,
     loadScene: true,
     saveToActiveFile: true,
-    theme: true,
     saveAsImage: true,
+    saveAsImageOptions: {
+      defaultBackgroundValue: false,
+      disableClipboard: false,
+      disableScale: false,
+      disableSelection: false,
+      disableSceneEmbed: false,
+      hideTheme: false,
+    },
+    theme: true,
   },
 };
 

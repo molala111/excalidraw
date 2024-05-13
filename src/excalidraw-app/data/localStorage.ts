@@ -20,6 +20,18 @@ export const saveUsernameToLocalStorage = (username: string) => {
   }
 };
 
+export const saveRenderPointerToLocalStorage = (renderPointer: boolean) => {
+  try {
+    localStorage.setItem(
+      STORAGE_KEYS.LOCAL_STORAGE_COLLAB,
+      JSON.stringify({ renderPointer }),
+    );
+  } catch (error: any) {
+    // Unable to access window.localStorage
+    console.error(error);
+  }
+};
+
 export const importUsernameFromLocalStorage = (): string | null => {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.LOCAL_STORAGE_COLLAB);
@@ -32,6 +44,20 @@ export const importUsernameFromLocalStorage = (): string | null => {
   }
 
   return null;
+};
+
+export const importRenderPointerFromLocalStorage = (): boolean  => {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.LOCAL_STORAGE_COLLAB);
+    if (data) {
+      return JSON.parse(data).renderPointer;
+    }
+  } catch (error: any) {
+    // Unable to access localStorage
+    console.error(error);
+  }
+
+  return true;
 };
 
 export const importFromLocalStorage = () => {

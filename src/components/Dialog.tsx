@@ -85,7 +85,6 @@ export const Dialog = (props: DialogProps) => {
           <button
             className="Modal__close"
             onClick={onClose}
-            title={t("buttons.close")}
             aria-label={t("buttons.close")}
           >
             {useDevice().isMobile ? back : close}

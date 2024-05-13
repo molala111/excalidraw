@@ -1,5 +1,5 @@
 import React from "react";
-import { AppState, ExcalidrawProps } from "../types";
+import { AppState } from "../types";
 import { ActionManager } from "../actions/manager";
 import { t } from "../i18n";
 import Stack from "./Stack";
@@ -18,8 +18,6 @@ import { UserList } from "./UserList";
 import { BackgroundPickerAndDarkModeToggle } from "./BackgroundPickerAndDarkModeToggle";
 import { LibraryButton } from "./LibraryButton";
 import { PenModeButton } from "./PenModeButton";
-import { Stats } from "./Stats";
-import { actionToggleStats } from "../actions";
 
 type MobileMenuProps = {
   appState: AppState;
@@ -33,7 +31,29 @@ type MobileMenuProps = {
   onLockToggle: () => void;
   onPenModeToggle: () => void;
   canvas: HTMLCanvasElement | null;
+  allowedShapes: Array<String>;
+  disableAlignItems?: boolean;
+  disableGrouping?: boolean;
+  disableHints?: boolean;
+  disableLink?: boolean;
+  disableShortcuts?: boolean;
+  disableVerticalAlignOptions?: boolean;
+  fontSizeOptions?: Array<String>;
   isCollaborating: boolean;
+  hideArrowHeadsOptions?: boolean;
+  hideClearCanvas?: boolean;
+  hideColorInput?: boolean;
+  hideFontFamily?: boolean;
+  hideIOActions?: boolean;
+  hideLayers?: boolean;
+  hideLibraries?: boolean;
+  hideLockButton?: boolean;
+  hideOpacityInput?: boolean;
+  hideSharpness?: boolean;
+  hideStrokeStyle?: boolean;
+  hideTextAlign?: boolean;
+  hideThemeControls?: boolean;
+  hideUserList?: boolean;
   renderCustomFooter?: (
     isMobile: boolean,
     appState: AppState,
@@ -44,7 +64,7 @@ type MobileMenuProps = {
     isMobile: boolean,
     appState: AppState,
   ) => JSX.Element | null;
-  renderCustomStats?: ExcalidrawProps["renderCustomStats"];
+  renderStats: () => JSX.Element | null;
 };
 
 export const MobileMenu = ({
@@ -59,12 +79,34 @@ export const MobileMenu = ({
   onLockToggle,
   onPenModeToggle,
   canvas,
+  allowedShapes,
+  disableAlignItems,
+  disableGrouping,
+  disableHints,
+  disableLink,
+  disableShortcuts,
+  disableVerticalAlignOptions,
+  hideArrowHeadsOptions,
+  fontSizeOptions,
   isCollaborating,
+  hideClearCanvas,
+  hideColorInput,
+  hideFontFamily,
+  hideIOActions,
+  hideLayers,
+  hideLibraries,
+  hideLockButton,
+  hideOpacityInput,
+  hideSharpness,
+  hideStrokeStyle,
+  hideTextAlign,
+  hideThemeControls,
+  hideUserList,
   renderCustomFooter,
   showThemeBtn,
   onImageAction,
   renderTopRightUI,
-  renderCustomStats,
+  renderStats,
 }: MobileMenuProps) => {
   const renderToolbar = () => {
     return (
@@ -80,6 +122,8 @@ export const MobileMenu = ({
                       appState={appState}
                       canvas={canvas}
                       activeTool={appState.activeTool}
+                      allowedShapes={allowedShapes}
+                      disableShortcuts={disableShortcuts}
                       setAppState={setAppState}
                       onImageAction={({ pointerType }) => {
                         onImageAction({
@@ -90,17 +134,21 @@ export const MobileMenu = ({
                   </Stack.Row>
                 </Island>
                 {renderTopRightUI && renderTopRightUI(true, appState)}
-                <LockButton
-                  checked={appState.activeTool.locked}
-                  onChange={onLockToggle}
-                  title={t("toolBar.lock")}
-                  isMobile
-                />
-                <LibraryButton
-                  appState={appState}
-                  setAppState={setAppState}
-                  isMobile
-                />
+                {!hideLockButton && (
+                  <LockButton
+                    checked={appState.activeTool.locked}
+                    onChange={onLockToggle}
+                    title={t("toolBar.lock")}
+                    isMobile
+                  />
+                )}
+                {!hideLibraries && (
+                  <LibraryButton
+                    appState={appState}
+                    setAppState={setAppState}
+                    isMobile
+                  />
+                )}
                 <PenModeButton
                   checked={appState.penMode}
                   onChange={onPenModeToggle}
@@ -113,7 +161,9 @@ export const MobileMenu = ({
             </Stack.Col>
           )}
         </Section>
-        <HintViewer appState={appState} elements={elements} isMobile={true} />
+        {!disableHints && (
+          <HintViewer appState={appState} elements={elements} isMobile={true} />
+        )}
       </FixedSideContainer>
     );
   };
@@ -121,6 +171,7 @@ export const MobileMenu = ({
   const renderAppToolbar = () => {
     // Render eraser conditionally in mobile
     const showEraser =
+      !appState.viewModeEnabled &&
       !appState.editingElement &&
       getSelectedElements(elements, appState).length === 0;
 
@@ -139,11 +190,12 @@ export const MobileMenu = ({
 
         {actionManager.renderAction("undo")}
         {actionManager.renderAction("redo")}
-        {showEraser
-          ? actionManager.renderAction("eraser")
-          : actionManager.renderAction(
-              appState.multiElement ? "finalize" : "duplicateSelection",
-            )}
+        {showEraser &&
+          actionManager.renderAction("eraser", { disableShortcuts })}
+
+        {actionManager.renderAction(
+          appState.multiElement ? "finalize" : "duplicateSelection",
+        )}
         {actionManager.renderAction("deleteSelectedElements")}
       </div>
     );
@@ -153,16 +205,20 @@ export const MobileMenu = ({
     if (appState.viewModeEnabled) {
       return (
         <>
-          {renderJSONExportDialog()}
+          {!hideIOActions && renderJSONExportDialog()}
           {renderImageExportDialog()}
         </>
       );
     }
     return (
       <>
-        {actionManager.renderAction("clearCanvas")}
-        {actionManager.renderAction("loadScene")}
-        {renderJSONExportDialog()}
+        {!hideClearCanvas && actionManager.renderAction("clearCanvas")}
+        {!hideIOActions && (
+          <>
+            {actionManager.renderAction("loadScene")}
+            {renderJSONExportDialog()}
+          </>
+        )}
         {renderImageExportDialog()}
         {onCollabButtonClick && (
           <CollabButton
@@ -171,31 +227,22 @@ export const MobileMenu = ({
             onClick={onCollabButtonClick}
           />
         )}
-        {
+        {!hideThemeControls && (
           <BackgroundPickerAndDarkModeToggle
             actionManager={actionManager}
             appState={appState}
             setAppState={setAppState}
             showThemeBtn={showThemeBtn}
+            disableShortcuts={disableShortcuts}
           />
-        }
+        )}
       </>
     );
   };
   return (
     <>
       {!appState.viewModeEnabled && renderToolbar()}
-      {!appState.openMenu && appState.showStats && (
-        <Stats
-          appState={appState}
-          setAppState={setAppState}
-          elements={elements}
-          onClose={() => {
-            actionManager.executeAction(actionToggleStats);
-          }}
-          renderCustomStats={renderCustomStats}
-        />
-      )}
+      {renderStats()}
       <div
         className="App-bottom-bar"
         style={{
@@ -211,7 +258,7 @@ export const MobileMenu = ({
                 <Stack.Col gap={4}>
                   {renderCanvasActions()}
                   {renderCustomFooter?.(true, appState)}
-                  {appState.collaborators.size > 0 && (
+                  {!hideUserList && appState.collaborators.size > 0 && (
                     <fieldset>
                       <legend>{t("labels.collaborators")}</legend>
                       <UserList
@@ -232,6 +279,21 @@ export const MobileMenu = ({
                 appState={appState}
                 elements={elements}
                 renderAction={actionManager.renderAction}
+                activeTool={appState.activeTool.type}
+                disableAlignItems={disableAlignItems}
+                disableGrouping={disableGrouping}
+                disableLink={disableLink}
+                disableVerticalAlignOptions={disableVerticalAlignOptions}
+                fontSizeOptions={fontSizeOptions}
+                hideArrowHeadsOptions={hideArrowHeadsOptions}
+                hideLayers={hideLayers}
+                hideOpacityInput={hideOpacityInput}
+                disableShortcuts={disableShortcuts}
+                hideColorInput={hideColorInput}
+                hideFontFamily={hideFontFamily}
+                hideSharpness={hideSharpness}
+                hideStrokeStyle={hideStrokeStyle}
+                hideTextAlign={hideTextAlign}
               />
             </Section>
           ) : null}

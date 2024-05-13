@@ -13,7 +13,7 @@ import {
   maybeBindLinearElement,
   bindOrUnbindLinearElement,
 } from "../element/binding";
-import { isBindingElement, isLinearElement } from "../element/typeChecks";
+import { isBindingElement } from "../element/typeChecks";
 import { AppState } from "../types";
 
 export const actionFinalize = register({
@@ -181,11 +181,6 @@ export const actionFinalize = register({
                 [multiPointElement.id]: true,
               }
             : appState.selectedElementIds,
-        // To select the linear element when user has finished mutipoint editing
-        selectedLinearElement:
-          multiPointElement && isLinearElement(multiPointElement)
-            ? new LinearElementEditor(multiPointElement, scene)
-            : appState.selectedLinearElement,
         pendingImageElementId: null,
       },
       commitToHistory: appState.activeTool.type === "freedraw",

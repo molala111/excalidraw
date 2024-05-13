@@ -105,26 +105,15 @@ export const dragNewElement = (
       true */
   widthAspectRatio?: number | null,
 ) => {
-  if (shouldMaintainAspectRatio && draggingElement.type !== "selection") {
+  if (shouldMaintainAspectRatio) {
     if (widthAspectRatio) {
       height = width / widthAspectRatio;
     } else {
-      // Depending on where the cursor is at (x, y) relative to where the starting point is
-      // (originX, originY), we use ONLY width or height to control size increase.
-      // This allows the cursor to always "stick" to one of the sides of the bounding box.
-      if (Math.abs(y - originY) > Math.abs(x - originX)) {
-        ({ width, height } = getPerfectElementSize(
-          elementType,
-          height,
-          x < originX ? -width : width,
-        ));
-      } else {
-        ({ width, height } = getPerfectElementSize(
-          elementType,
-          width,
-          y < originY ? -height : height,
-        ));
-      }
+      ({ width, height } = getPerfectElementSize(
+        elementType,
+        width,
+        y < originY ? -height : height,
+      ));
 
       if (height < 0) {
         height = -height;

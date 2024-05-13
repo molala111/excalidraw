@@ -9,41 +9,39 @@ export const getSizeFromPoints = (points: readonly Point[]) => {
   };
 };
 
-/** @arg dimension, 0 for rescaling only x, 1 for y */
 export const rescalePoints = (
   dimension: 0 | 1,
-  newSize: number,
-  points: readonly Point[],
-  normalize: boolean,
+  nextDimensionSize: number,
+  prevPoints: readonly Point[],
 ): Point[] => {
-  const coordinates = points.map((point) => point[dimension]);
-  const maxCoordinate = Math.max(...coordinates);
-  const minCoordinate = Math.min(...coordinates);
-  const size = maxCoordinate - minCoordinate;
-  const scale = size === 0 ? 1 : newSize / size;
+  const prevDimValues = prevPoints.map((point) => point[dimension]);
+  const prevMaxDimension = Math.max(...prevDimValues);
+  const prevMinDimension = Math.min(...prevDimValues);
+  const prevDimensionSize = prevMaxDimension - prevMinDimension;
 
-  let nextMinCoordinate = Infinity;
+  const dimensionScaleFactor =
+    prevDimensionSize === 0 ? 1 : nextDimensionSize / prevDimensionSize;
 
-  const scaledPoints = points.map((point): Point => {
-    const newCoordinate = point[dimension] * scale;
-    const newPoint = [...point];
-    newPoint[dimension] = newCoordinate;
-    if (newCoordinate < nextMinCoordinate) {
-      nextMinCoordinate = newCoordinate;
-    }
-    return newPoint as unknown as Point;
-  });
+  let nextMinDimension = Infinity;
 
-  if (!normalize) {
-    return scaledPoints;
-  }
+  const scaledPoints = prevPoints.map(
+    (prevPoint) =>
+      prevPoint.map((value, currentDimension) => {
+        if (currentDimension !== dimension) {
+          return value;
+        }
+        const scaledValue = value * dimensionScaleFactor;
+        nextMinDimension = Math.min(scaledValue, nextMinDimension);
+        return scaledValue;
+      }) as [number, number],
+  );
 
   if (scaledPoints.length === 2) {
     // we don't translate two-point lines
     return scaledPoints;
   }
 
-  const translation = minCoordinate - nextMinCoordinate;
+  const translation = prevMinDimension - nextMinDimension;
 
   const nextPoints = scaledPoints.map(
     (scaledPoint) =>

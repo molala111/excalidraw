@@ -10,7 +10,7 @@ import { calculateScrollCenter, getSelectedElements } from "../scene";
 import { ExportType } from "../scene/types";
 import { AppProps, AppState, ExcalidrawProps, BinaryFiles } from "../types";
 import { muteFSAbortError } from "../utils";
-import { SelectedShapeActions, ShapesSwitcher } from "./Actions";
+import { SelectedShapeActions, ShapesSwitcher, ZoomActions } from "./Actions";
 import { BackgroundPickerAndDarkModeToggle } from "./BackgroundPickerAndDarkModeToggle";
 import CollabButton from "./CollabButton";
 import { ErrorDialog } from "./ErrorDialog";
@@ -39,7 +39,7 @@ import { trackEvent } from "../analytics";
 import { useDevice } from "../components/App";
 import { Stats } from "./Stats";
 import { actionToggleStats } from "../actions/actionToggleStats";
-import Footer from "./Footer";
+import { actionToggleZenMode } from "../actions";
 
 interface LayerUIProps {
   actionManager: ActionManager;
@@ -71,8 +71,8 @@ const LayerUI = ({
   appState,
   files,
   setAppState,
-  elements,
   canvas,
+  elements,
   onCollabButtonClick,
   onLockToggle,
   onPenModeToggle,
@@ -149,6 +149,7 @@ const LayerUI = ({
         elements={elements}
         appState={appState}
         files={files}
+        options={UIOptions.canvasActions.saveAsImageOptions}
         actionManager={actionManager}
         onExportToPng={createExporter("png")}
         onExportToSvg={createExporter("svg")}
@@ -174,7 +175,8 @@ const LayerUI = ({
         <Island padding={2} style={{ zIndex: 1 }}>
           <Stack.Col gap={4}>
             <Stack.Row gap={1} justifyContent="space-between">
-              {renderJSONExportDialog()}
+              {!UIOptions.canvasActions.hideIOActions &&
+                renderJSONExportDialog()}
               {renderImageExportDialog()}
             </Stack.Row>
           </Stack.Col>
@@ -195,26 +197,39 @@ const LayerUI = ({
       <Island padding={2} style={{ zIndex: 1 }}>
         <Stack.Col gap={4}>
           <Stack.Row gap={1} justifyContent="space-between">
-            {actionManager.renderAction("clearCanvas")}
-            <Separator />
-            {actionManager.renderAction("loadScene")}
-            {renderJSONExportDialog()}
+            {!UIOptions.canvasActions.hideClearCanvas && (
+              <>
+                {actionManager.renderAction("clearCanvas")}
+                <Separator />
+              </>
+            )}
+            {!UIOptions.canvasActions.hideIOActions && (
+              <>
+                {actionManager.renderAction("loadScene")}
+                {renderJSONExportDialog()}
+              </>
+            )}
             {renderImageExportDialog()}
-            <Separator />
             {onCollabButtonClick && (
-              <CollabButton
-                isCollaborating={isCollaborating}
-                collaboratorCount={appState.collaborators.size}
-                onClick={onCollabButtonClick}
-              />
+              <>
+                <Separator />
+                <CollabButton
+                  isCollaborating={isCollaborating}
+                  collaboratorCount={appState.collaborators.size}
+                  onClick={onCollabButtonClick}
+                />
+              </>
             )}
           </Stack.Row>
-          <BackgroundPickerAndDarkModeToggle
-            appState={appState}
-            actionManager={actionManager}
-            setAppState={setAppState}
-            showThemeBtn={showThemeBtn}
-          />
+          {!UIOptions.canvasActions.hideThemeControls && (
+            <BackgroundPickerAndDarkModeToggle
+              actionManager={actionManager}
+              appState={appState}
+              setAppState={setAppState}
+              showThemeBtn={showThemeBtn}
+              disableShortcuts={UIOptions.canvasActions.disableShortcuts}
+            />
+          )}
           {appState.fileHandle && (
             <>{actionManager.renderAction("saveToActiveFile")}</>
           )}
@@ -244,6 +259,23 @@ const LayerUI = ({
           appState={appState}
           elements={elements}
           renderAction={actionManager.renderAction}
+          activeTool={appState.activeTool.type}
+          disableAlignItems={UIOptions.canvasActions.disableAlignItems}
+          disableGrouping={UIOptions.canvasActions.disableGrouping}
+          disableLink={UIOptions.canvasActions.disableLink}
+          disableShortcuts={UIOptions.canvasActions.disableShortcuts}
+          disableVerticalAlignOptions={
+            UIOptions.canvasActions.disableVerticalAlignOptions
+          }
+          fontSizeOptions={UIOptions.canvasActions.fontSizeOptions}
+          hideArrowHeadsOptions={UIOptions.canvasActions.hideArrowHeadsOptions}
+          hideColorInput={UIOptions.canvasActions.hideColorInput}
+          hideFontFamily={UIOptions.canvasActions.hideFontFamily}
+          hideLayers={UIOptions.canvasActions.hideLayers}
+          hideOpacityInput={UIOptions.canvasActions.hideOpacityInput}
+          hideSharpness={UIOptions.canvasActions.hideSharpness}
+          hideStrokeStyle={UIOptions.canvasActions.hideStrokeStyle}
+          hideTextAlign={UIOptions.canvasActions.hideTextAlign}
         />
       </Island>
     </Section>
@@ -278,6 +310,7 @@ const LayerUI = ({
       libraryReturnUrl={libraryReturnUrl}
       focusContainer={focusContainer}
       library={library}
+      theme={appState.theme}
       files={files}
       id={id}
       appState={appState}
@@ -321,28 +354,36 @@ const LayerUI = ({
                       title={t("toolBar.penMode")}
                       penDetected={appState.penDetected}
                     />
-                    <LockButton
-                      zenModeEnabled={appState.zenModeEnabled}
-                      checked={appState.activeTool.locked}
-                      onChange={() => onLockToggle()}
-                      title={t("toolBar.lock")}
-                    />
+                    {!UIOptions.canvasActions.hideLockButton && (
+                      <LockButton
+                        zenModeEnabled={appState.zenModeEnabled}
+                        checked={appState.activeTool.locked}
+                        onChange={() => onLockToggle()}
+                        title={t("toolBar.lock")}
+                      />
+                    )}
                     <Island
                       padding={1}
                       className={clsx("App-toolbar", {
                         "zen-mode": appState.zenModeEnabled,
                       })}
                     >
-                      <HintViewer
-                        appState={appState}
-                        elements={elements}
-                        isMobile={device.isMobile}
-                      />
+                      {!UIOptions.canvasActions.disableHints && (
+                        <HintViewer
+                          appState={appState}
+                          elements={elements}
+                          isMobile={device.isMobile}
+                        />
+                      )}
                       {heading}
                       <Stack.Row gap={1}>
                         <ShapesSwitcher
                           appState={appState}
+                          allowedShapes={UIOptions.canvasActions.allowedShapes}
                           canvas={canvas}
+                          disableShortcuts={
+                            UIOptions.canvasActions.disableShortcuts
+                          }
                           activeTool={appState.activeTool}
                           setAppState={setAppState}
                           onImageAction={({ pointerType }) => {
@@ -353,10 +394,12 @@ const LayerUI = ({
                         />
                       </Stack.Row>
                     </Island>
-                    <LibraryButton
-                      appState={appState}
-                      setAppState={setAppState}
-                    />
+                    {!UIOptions.canvasActions.hideLibraries && (
+                      <LibraryButton
+                        appState={appState}
+                        setAppState={setAppState}
+                      />
+                    )}
                   </Stack.Row>
                 </Stack.Col>
               )}
@@ -370,10 +413,12 @@ const LayerUI = ({
               },
             )}
           >
-            <UserList
-              collaborators={appState.collaborators}
-              actionManager={actionManager}
-            />
+            {!UIOptions.canvasActions.hideUserList && (
+              <UserList
+                collaborators={appState.collaborators}
+                actionManager={actionManager}
+              />
+            )}
             {renderTopRightUI?.(device.isMobile, appState)}
           </div>
         </div>
@@ -381,7 +426,109 @@ const LayerUI = ({
     );
   };
 
-  return (
+  const renderBottomAppMenu = () => {
+    return (
+      <footer
+        role="contentinfo"
+        className="layer-ui__wrapper__footer App-menu App-menu_bottom"
+      >
+        <div
+          className={clsx(
+            "layer-ui__wrapper__footer-left zen-mode-transition",
+            {
+              "layer-ui__wrapper__footer-left--transition-left":
+                appState.zenModeEnabled,
+            },
+          )}
+        >
+          <Stack.Col gap={2}>
+            <Section heading="canvasActions">
+              <Island padding={1}>
+                <ZoomActions
+                  disableShortcuts={UIOptions.canvasActions.disableShortcuts}
+                  renderAction={actionManager.renderAction}
+                  zoom={appState.zoom}
+                />
+              </Island>
+              {!appState.viewModeEnabled && (
+                <>
+                  <div
+                    className={clsx("undo-redo-buttons zen-mode-transition", {
+                      "layer-ui__wrapper__footer-left--transition-bottom":
+                        appState.zenModeEnabled,
+                    })}
+                  >
+                    {actionManager.renderAction("undo", { size: "small" })}
+                    {actionManager.renderAction("redo", { size: "small" })}
+                  </div>
+
+                  <div
+                    className={clsx("eraser-buttons zen-mode-transition", {
+                      "layer-ui__wrapper__footer-left--transition-left":
+                        appState.zenModeEnabled,
+                    })}
+                  >
+                    {actionManager.renderAction("eraser", {
+                      disableShortcuts:
+                        UIOptions.canvasActions.disableShortcuts,
+                      size: "small",
+                    })}
+                  </div>
+                </>
+              )}
+              {!appState.viewModeEnabled &&
+                appState.multiElement &&
+                device.isTouchScreen && (
+                  <div
+                    className={clsx("finalize-button zen-mode-transition", {
+                      "layer-ui__wrapper__footer-left--transition-left":
+                        appState.zenModeEnabled,
+                    })}
+                  >
+                    {actionManager.renderAction("finalize", { size: "small" })}
+                  </div>
+                )}
+            </Section>
+          </Stack.Col>
+        </div>
+        <div
+          className={clsx(
+            "layer-ui__wrapper__footer-center zen-mode-transition",
+            {
+              "layer-ui__wrapper__footer-left--transition-bottom":
+                appState.zenModeEnabled,
+            },
+          )}
+        >
+          {renderCustomFooter?.(false, appState)}
+        </div>
+
+        {!UIOptions.canvasActions.hideHelpDialog && (
+          <div
+            className={clsx(
+              "layer-ui__wrapper__footer-right zen-mode-transition",
+              {
+                "transition-right disable-pointerEvents":
+                  appState.zenModeEnabled,
+              },
+            )}
+          >
+            {actionManager.renderAction("toggleShortcuts")}
+          </div>
+        )}
+        <button
+          className={clsx("disable-zen-mode", {
+            "disable-zen-mode--visible": showExitZenModeBtn,
+          })}
+          onClick={() => actionManager.executeAction(actionToggleZenMode)}
+        >
+          {t("buttons.exitZenMode")}
+        </button>
+      </footer>
+    );
+  };
+
+  const dialogs = (
     <>
       {appState.isLoading && <LoadingMessage delay={250} />}
       {appState.errorMessage && (
@@ -390,8 +537,9 @@ const LayerUI = ({
           onClose={() => setAppState({ errorMessage: null })}
         />
       )}
-      {appState.showHelpDialog && (
+      {appState.showHelpDialog && !UIOptions.canvasActions.hideHelpDialog && (
         <HelpDialog
+          hideLibraries={UIOptions.canvasActions.hideLibraries}
           onClose={() => {
             setAppState({ showHelpDialog: false });
           }}
@@ -409,81 +557,109 @@ const LayerUI = ({
           }
         />
       )}
-      {device.isMobile && (
-        <MobileMenu
-          appState={appState}
-          elements={elements}
-          actionManager={actionManager}
-          libraryMenu={libraryMenu}
-          renderJSONExportDialog={renderJSONExportDialog}
-          renderImageExportDialog={renderImageExportDialog}
-          setAppState={setAppState}
-          onCollabButtonClick={onCollabButtonClick}
-          onLockToggle={() => onLockToggle()}
-          onPenModeToggle={onPenModeToggle}
-          canvas={canvas}
-          isCollaborating={isCollaborating}
-          renderCustomFooter={renderCustomFooter}
-          showThemeBtn={showThemeBtn}
-          onImageAction={onImageAction}
-          renderTopRightUI={renderTopRightUI}
-          renderCustomStats={renderCustomStats}
-        />
-      )}
+    </>
+  );
 
-      {!device.isMobile && (
-        <>
-          <div
-            className={clsx("layer-ui__wrapper", {
-              "disable-pointerEvents":
-                appState.draggingElement ||
-                appState.resizingElement ||
-                (appState.editingElement &&
-                  !isTextElement(appState.editingElement)),
-            })}
-            style={
-              appState.isLibraryOpen &&
-              appState.isLibraryMenuDocked &&
-              device.canDeviceFitSidebar
-                ? { width: `calc(100% - ${LIBRARY_SIDEBAR_WIDTH}px)` }
-                : {}
-            }
+  const renderStats = () => {
+    if (!appState.showStats) {
+      return null;
+    }
+    return (
+      <Stats
+        appState={appState}
+        setAppState={setAppState}
+        elements={elements}
+        onClose={() => {
+          actionManager.executeAction(actionToggleStats);
+        }}
+        renderCustomStats={renderCustomStats}
+      />
+    );
+  };
+
+  return device.isMobile ? (
+    <>
+      {dialogs}
+      <MobileMenu
+        appState={appState}
+        elements={elements}
+        actionManager={actionManager}
+        libraryMenu={libraryMenu}
+        renderJSONExportDialog={renderJSONExportDialog}
+        renderImageExportDialog={renderImageExportDialog}
+        setAppState={setAppState}
+        onCollabButtonClick={onCollabButtonClick}
+        onLockToggle={() => onLockToggle()}
+        onPenModeToggle={onPenModeToggle}
+        canvas={canvas}
+        allowedShapes={UIOptions.canvasActions.allowedShapes}
+        hideColorInput={UIOptions.canvasActions.hideColorInput}
+        disableVerticalAlignOptions={
+          UIOptions.canvasActions.disableVerticalAlignOptions
+        }
+        hideArrowHeadsOptions={UIOptions.canvasActions.hideArrowHeadsOptions}
+        disableAlignItems={UIOptions.canvasActions.disableAlignItems}
+        disableGrouping={UIOptions.canvasActions.disableGrouping}
+        disableHints={UIOptions.canvasActions.disableHints}
+        disableLink={UIOptions.canvasActions.disableLink}
+        disableShortcuts={UIOptions.canvasActions.disableShortcuts}
+        isCollaborating={isCollaborating}
+        hideClearCanvas={UIOptions.canvasActions.hideClearCanvas}
+        hideFontFamily={UIOptions.canvasActions.hideFontFamily}
+        hideLayers={UIOptions.canvasActions.hideLayers}
+        hideIOActions={UIOptions.canvasActions.hideIOActions}
+        hideLibraries={UIOptions.canvasActions.hideLibraries}
+        hideLockButton={UIOptions.canvasActions.hideLockButton}
+        hideOpacityInput={UIOptions.canvasActions.hideOpacityInput}
+        hideSharpness={UIOptions.canvasActions.hideSharpness}
+        hideStrokeStyle={UIOptions.canvasActions.hideStrokeStyle}
+        hideTextAlign={UIOptions.canvasActions.hideTextAlign}
+        hideThemeControls={UIOptions.canvasActions.hideThemeControls}
+        hideUserList={UIOptions.canvasActions.hideUserList}
+        renderCustomFooter={renderCustomFooter}
+        showThemeBtn={showThemeBtn}
+        onImageAction={onImageAction}
+        renderTopRightUI={renderTopRightUI}
+        renderStats={renderStats}
+      />
+    </>
+  ) : (
+    <>
+      <div
+        className={clsx("layer-ui__wrapper", {
+          "disable-pointerEvents":
+            appState.draggingElement ||
+            appState.resizingElement ||
+            (appState.editingElement &&
+              !isTextElement(appState.editingElement)),
+        })}
+        style={
+          appState.isLibraryOpen &&
+          appState.isLibraryMenuDocked &&
+          device.canDeviceFitSidebar
+            ? { width: `calc(100% - ${LIBRARY_SIDEBAR_WIDTH}px)` }
+            : {}
+        }
+      >
+        {dialogs}
+        {renderFixedSideContainer()}
+        {renderBottomAppMenu()}
+        {renderStats()}
+        {appState.scrolledOutside && (
+          <button
+            className="scroll-back-to-content"
+            onClick={() => {
+              setAppState({
+                ...calculateScrollCenter(elements, appState, canvas),
+              });
+            }}
           >
-            {renderFixedSideContainer()}
-            <Footer
-              appState={appState}
-              actionManager={actionManager}
-              renderCustomFooter={renderCustomFooter}
-              showExitZenModeBtn={showExitZenModeBtn}
-            />
-            {appState.showStats && (
-              <Stats
-                appState={appState}
-                setAppState={setAppState}
-                elements={elements}
-                onClose={() => {
-                  actionManager.executeAction(actionToggleStats);
-                }}
-                renderCustomStats={renderCustomStats}
-              />
-            )}
-            {appState.scrolledOutside && (
-              <button
-                className="scroll-back-to-content"
-                onClick={() => {
-                  setAppState({
-                    ...calculateScrollCenter(elements, appState, canvas),
-                  });
-                }}
-              >
-                {t("buttons.scrollBackToContent")}
-              </button>
-            )}
-          </div>
-          {appState.isLibraryOpen && (
-            <div className="layer-ui__sidebar">{libraryMenu}</div>
-          )}
-        </>
+            {t("buttons.scrollBackToContent")}
+          </button>
+        )}
+      </div>
+      {appState.isLibraryOpen && (
+        <div className="layer-ui__sidebar">{libraryMenu}</div>
       )}
     </>
   );

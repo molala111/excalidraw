@@ -46,6 +46,8 @@ import {
 import {
   importUsernameFromLocalStorage,
   saveUsernameToLocalStorage,
+  importRenderPointerFromLocalStorage,
+  saveRenderPointerToLocalStorage
 } from "../data/localStorage";
 import Portal from "./Portal";
 import RoomDialog from "./RoomDialog";
@@ -81,6 +83,7 @@ interface CollabState {
   errorMessage: string;
   username: string;
   activeRoomLink: string;
+  renderPointer: boolean;
 }
 
 type CollabInstance = InstanceType<typeof Collab>;
@@ -94,6 +97,7 @@ export interface CollabAPI {
   syncElements: CollabInstance["syncElements"];
   fetchImageFilesFromFirebase: CollabInstance["fetchImageFilesFromFirebase"];
   setUsername: (username: string) => void;
+  setRenderPointer: (renderPointer: boolean) => void;
 }
 
 interface PublicProps {
@@ -119,6 +123,7 @@ class Collab extends PureComponent<Props, CollabState> {
       errorMessage: "",
       username: importUsernameFromLocalStorage() || "",
       activeRoomLink: "",
+      renderPointer: importRenderPointerFromLocalStorage() || true,
     };
     this.portal = new Portal(this);
     this.fileManager = new FileManager({
@@ -163,6 +168,7 @@ class Collab extends PureComponent<Props, CollabState> {
       fetchImageFilesFromFirebase: this.fetchImageFilesFromFirebase,
       stopCollaboration: this.stopCollaboration,
       setUsername: this.setUsername,
+      setRenderPointer: this.setRenderPointer,
     };
 
     jotaiStore.set(collabAPIAtom, collabAPI);
@@ -226,7 +232,7 @@ class Collab extends PureComponent<Props, CollabState> {
       preventUnload(event);
     }
 
-    if (this.isCollaborating || this.portal.roomId) {
+    if (this.isCollaborating() || this.portal.roomId) {
       try {
         localStorage?.setItem(
           STORAGE_KEYS.LOCAL_STORAGE_KEY_COLLAB_FORCE_FLAG,
@@ -235,7 +241,7 @@ class Collab extends PureComponent<Props, CollabState> {
             room: this.portal.roomId,
           }),
         );
-      } catch {}
+      } catch { }
     }
   });
 
@@ -249,9 +255,13 @@ class Collab extends PureComponent<Props, CollabState> {
         this.excalidrawAPI.getAppState(),
       );
 
-      if (this.isCollaborating() && savedData && savedData.reconciledElements) {
+      if (!savedData) {
+        return;
+      }
+
+      if (this.isCollaborating() && savedData?.reconciledElements) {
         this.handleRemoteSceneUpdate(
-          this.reconcileElements(savedData.reconciledElements),
+          this.reconcileElements(savedData?.reconciledElements),
         );
       }
     } catch (error: any) {
@@ -491,6 +501,7 @@ class Collab extends PureComponent<Props, CollabState> {
           case "MOUSE_LOCATION": {
             const { pointer, button, username, selectedElementIds } =
               decryptedData.payload;
+              console.log('decryptedData.payload:',decryptedData.payload)
             const socketId: SocketUpdateDataSource["MOUSE_LOCATION"]["payload"]["socketId"] =
               decryptedData.payload.socketId ||
               // @ts-ignore legacy, see #2094 (#2097)
@@ -498,6 +509,7 @@ class Collab extends PureComponent<Props, CollabState> {
 
             const collaborators = new Map(this.collaborators);
             const user = collaborators.get(socketId) || {}!;
+            console.log('user:',socketId,pointer,user)
             user.pointer = pointer;
             user.button = button;
             user.selectedElementIds = selectedElementIds;
@@ -548,9 +560,9 @@ class Collab extends PureComponent<Props, CollabState> {
     roomLinkData,
   }:
     | {
-        fetchScene: true;
-        roomLinkData: { roomId: string; roomKey: string } | null;
-      }
+      fetchScene: true;
+      roomLinkData: { roomId: string; roomKey: string } | null;
+    }
     | { fetchScene: false; roomLinkData?: null }) => {
     clearTimeout(this.socketInitializationTimer!);
     if (this.portal.socket && this.fallbackInitializationHandler) {
@@ -616,11 +628,15 @@ class Collab extends PureComponent<Props, CollabState> {
   };
 
   private loadImageFiles = throttle(async () => {
-    const { loadedFiles, erroredFiles } =
-      await this.fetchImageFilesFromFirebase({
-        elements: this.excalidrawAPI.getSceneElementsIncludingDeleted(),
-      });
+    const response = await this.fetchImageFilesFromFirebase({
+      elements: this.excalidrawAPI.getSceneElementsIncludingDeleted(),
+    });
 
+    if (!response) {
+      return;
+    }
+
+    const { loadedFiles, erroredFiles } = response;
     this.excalidrawAPI.addFiles(loadedFiles);
 
     updateStaleImageStatuses({
@@ -802,8 +818,13 @@ class Collab extends PureComponent<Props, CollabState> {
     saveUsernameToLocalStorage(username);
   };
 
+  setRenderPointer = (renderPointer: boolean) => {
+    this.setState({ renderPointer })
+    saveRenderPointerToLocalStorage(renderPointer)
+  }
+
   render() {
-    const { username, errorMessage, activeRoomLink } = this.state;
+    const { username, errorMessage, activeRoomLink,renderPointer } = this.state;
 
     const { modalIsShown } = this.props;
 

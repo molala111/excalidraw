@@ -32,7 +32,6 @@ import { getElementAbsoluteCoords } from "./";
 
 import "./Hyperlink.scss";
 import { trackEvent } from "../analytics";
-import { useExcalidrawAppState } from "../components/App";
 
 const CONTAINER_WIDTH = 320;
 const SPACE_BOTTOM = 85;
@@ -49,15 +48,15 @@ let IS_HYPERLINK_TOOLTIP_VISIBLE = false;
 
 export const Hyperlink = ({
   element,
+  appState,
   setAppState,
   onLinkOpen,
 }: {
   element: NonDeletedExcalidrawElement;
+  appState: AppState;
   setAppState: React.Component<any, AppState>["setState"];
   onLinkOpen: ExcalidrawProps["onLinkOpen"];
 }) => {
-  const appState = useExcalidrawAppState();
-
   const linkVal = element.link || "";
 
   const [inputVal, setInputVal] = useState(linkVal);
@@ -271,7 +270,7 @@ export const actionLink = register({
     const selectedElements = getSelectedElements(elements, appState);
     return selectedElements.length === 1;
   },
-  PanelComponent: ({ elements, appState, updateData }) => {
+  PanelComponent: ({ elements, appState, updateData, data }) => {
     const selectedElements = getSelectedElements(elements, appState);
 
     return (
@@ -279,7 +278,9 @@ export const actionLink = register({
         type="button"
         icon={link}
         aria-label={t(getContextMenuLabel(elements, appState))}
-        title={`${t("labels.link.label")} - ${getShortcutKey("CtrlOrCmd+K")}`}
+        title={`${t("labels.link.label")}${
+          data?.disableShortcuts ? "" : ` - ${getShortcutKey("CtrlOrCmd+K")}`
+        }`}
         onClick={() => updateData(null)}
         selected={selectedElements.length === 1 && !!selectedElements[0].link}
       />

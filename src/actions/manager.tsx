@@ -87,6 +87,8 @@ export class ActionManager {
             ? canvasActions[action.name as keyof typeof canvasActions]
             : true) &&
           action.keyTest &&
+          (!canvasActions?.disableShortcuts ||
+            canvasActions.allowedShortcuts.includes(action.name)) &&
           action.keyTest(
             event,
             this.getAppState(),
@@ -147,7 +149,6 @@ export class ActionManager {
     ) {
       const action = this.actions[name];
       const PanelComponent = action.PanelComponent!;
-      PanelComponent.displayName = "PanelComponent";
       const elements = this.getElementsIncludingDeleted();
       const appState = this.getAppState();
       const updateData = (formState?: any) => {

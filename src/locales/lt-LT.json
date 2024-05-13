@@ -110,13 +110,13 @@
     "unbindText": "",
     "bindText": "",
     "link": {
-      "edit": "Redeguoti nuorodą",
-      "create": "Sukurti nuorodą",
-      "label": "Nuoroda"
+      "edit": "",
+      "create": "",
+      "label": ""
     },
     "elementLock": {
-      "lock": "Užrakinti",
-      "unlock": "Atrakinti",
+      "lock": "",
+      "unlock": "",
       "lockAll": "",
       "unlockAll": ""
     },
@@ -187,7 +187,8 @@
     "invalidSceneUrl": "",
     "resetLibrary": "",
     "removeItemsFromsLibrary": "",
-    "invalidEncryptionKey": ""
+    "invalidEncryptionKey": "",
+    "browserZoom": ""
   },
   "errors": {
     "unsupportedFileType": "",

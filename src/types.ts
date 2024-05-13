@@ -30,13 +30,12 @@ import Library from "./data/library";
 import type { FileSystemHandle } from "./data/filesystem";
 import type { ALLOWED_IMAGE_MIME_TYPES, MIME_TYPES } from "./constants";
 
+export * from "./element/types";
+
 export type Point = Readonly<RoughPoint>;
 
 export type Collaborator = {
-  pointer?: {
-    x: number;
-    y: number;
-  };
+  pointer?: CollaboratorPointer
   button?: "up" | "down";
   selectedElementIds?: AppState["selectedElementIds"];
   username?: string | null;
@@ -50,6 +49,18 @@ export type Collaborator = {
   avatarUrl?: string;
   // user id. If supplied, we'll filter out duplicates when rendering user avatars.
   id?: string;
+};
+
+export type CollaboratorPointer = {
+  x: number;
+  y: number;
+  /**
+   * Whether to render cursor + username. Useful when you only want to render
+   * laser trail.
+   *
+   * @default true
+   */
+  renderPointer?: boolean;
 };
 
 export type DataURL = string & { _brand: "DataURL" };
@@ -179,7 +190,6 @@ export type AppState = {
   /** imageElement waiting to be placed on canvas */
   pendingImageElementId: ExcalidrawImageElement["id"] | null;
   showHyperlinkPopup: false | "info" | "editor";
-  selectedLinearElement: LinearElementEditor | null;
 };
 
 export type NormalizedZoomValue = number & { _brand: "normalizedZoom" };
@@ -269,7 +279,7 @@ export interface ExcalidrawProps {
   onCollabButtonClick?: () => void;
   isCollaborating?: boolean;
   onPointerUpdate?: (payload: {
-    pointer: { x: number; y: number };
+    pointer: { x: number; y: number,renderPointer:boolean };
     button: "down" | "up";
     pointersMap: Gesture["pointers"];
   }) => void;
@@ -315,6 +325,22 @@ export interface ExcalidrawProps {
   onScrollChange?: (scrollX: number, scrollY: number) => void;
 }
 
+export interface CollabProps {
+  collabServerUrl?: string;
+  collabDetails?: { roomId: string; roomKey: string };
+  excalidrawAPI: ExcalidrawImperativeAPI;
+  modalIsShown?: boolean;
+  useTestEnv?: boolean;
+}
+
+export interface ExcalidrawAppProps {
+  collabServerUrl?: string;
+  collabDetails?: { roomId: string; roomKey: string };
+  excalidraw: ExcalidrawProps;
+  getExcalidrawAPI?: Function;
+  getCollabAPI?: Function;
+}
+
 export type SceneData = {
   elements?: ImportedDataState["elements"];
   appState?: ImportedDataState["appState"];
@@ -344,14 +370,49 @@ export type ExportOpts = {
   ) => JSX.Element;
 };
 
+export type SaveAsImageOptions = {
+  defaultBackgroundValue?: boolean;
+  disableClipboard?: boolean;
+  disableScale?: boolean;
+  disableSceneEmbed?: boolean;
+  disableSelection?: boolean;
+  hideTheme?: boolean;
+};
+
 type CanvasActions = {
+  allowedShapes?: Array<String>;
+  allowedShortcuts?: Array<String>;
   changeViewBackgroundColor?: boolean;
   clearCanvas?: boolean;
+  disableAlignItems?: boolean;
+  disableFileDrop?: boolean;
+  disableGrouping?: boolean;
+  disableHints?: boolean;
+  disableLink?: boolean;
+  disableShortcuts?: boolean;
+  disableVerticalAlignOptions?: boolean;
   export?: false | ExportOpts;
+  fontSizeOptions?: Array<String>;
+  hideArrowHeadsOptions?: boolean;
+  hideColorInput?: boolean;
+  hideClearCanvas?: boolean;
+  hideFontFamily?: boolean;
+  hideHelpDialog?: boolean;
+  hideIOActions?: boolean;
+  hideLibraries?: boolean;
+  hideLockButton?: boolean;
+  hideSharpness?: boolean;
+  hideStrokeStyle?: boolean;
+  hideTextAlign?: boolean;
+  hideThemeControls?: boolean;
+  hideUserList?: boolean;
+  hideLayers?: boolean;
+  hideOpacityInput?: boolean;
   loadScene?: boolean;
   saveToActiveFile?: boolean;
-  theme?: boolean;
   saveAsImage?: boolean;
+  saveAsImageOptions?: SaveAsImageOptions;
+  theme?: boolean;
 };
 
 export type AppProps = Merge<
@@ -422,6 +483,7 @@ export type PointerDownState = Readonly<{
     // pointer interaction
     hasBeenDuplicated: boolean;
     hasHitCommonBoundingBoxOfSelectedElements: boolean;
+    hasHitElementInside: boolean;
   };
   withCmdOrCtrl: boolean;
   drag: {
